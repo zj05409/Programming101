@@ -8,7 +8,7 @@ https://www.google.cn/chrome/
 ![image](https://user-images.githubusercontent.com/1572996/88445084-13527580-ce53-11ea-8eaf-8b28e983177a.png)
 
 安装并打开Chrome之后，你可点击顶部视图栏的： 视图->开发者->开发者工具，打开浏览器自带的编程工具，做点小练习。
-￼
+
 ![image](https://user-images.githubusercontent.com/1572996/88445086-164d6600-ce53-11ea-9f78-86c1bcc39f56.png)
 
 在> 后面输入1+1并回车，可以看到第二行显示2。
@@ -50,4 +50,4 @@ permutations(randomNums).forEach((numP) => {
   });
 });
 Array.from(results.values()).forEach((r, i) => { console.log(`${i + 1} : ${r} = 24`); });
-```javascript
+```
