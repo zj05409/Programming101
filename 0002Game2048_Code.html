@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title> Javascript : 2048 puzzle</title>
+ </head>
+ <body>
+	<center>
+		<a style="cursor: pointer; padding-left: 10%;" onclick="return initGame();">new game</a>
+		<div id="canvas">
+			<table border="1">
+				<tbody>
+					<tr>
+						<td align="center" valign="center" height="40" width="40" id="0-0"></td>
+						<td align="center" valign="center" height="40" width="40" id="0-1"></td>
+						<td align="center" valign="center" height="40" width="40" id="0-2"></td>
+						<td align="center" valign="center" height="40" width="40" id="0-3" style="background-color: rgb(246, 206, 216);">2</td>
+					</tr>
+					<tr>
+						<td align="center" valign="center" height="40" width="40" id="1-0"></td>
+						<td align="center" valign="center" height="40" width="40" id="1-1"></td>
+						<td align="center" valign="center" height="40" width="40" id="1-2"></td>
+						<td align="center" valign="center" height="40" width="40" id="1-3" style="background-color: rgb(246, 206, 216);">2</td>
+					</tr>
+					<tr>
+						<td align="center" valign="center" height="40" width="40" id="2-0"></td>
+						<td align="center" valign="center" height="40" width="40" id="2-1"></td>
+						<td align="center" valign="center" height="40" width="40" id="2-2"></td>
+						<td align="center" valign="center" height="40" width="40" id="2-3"></td>
+					</tr>
+					<tr>
+						<td align="center" valign="center" height="40" width="40" id="3-0"></td>
+						<td align="center" valign="center" height="40" width="40" id="3-1"></td>
+						<td align="center" valign="center" height="40" width="40" id="3-2"></td>
+						<td align="center" valign="center" height="40" width="40" id="3-3"></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>	
+		<h2>Score : <div style="display:inline;" id="score">0</div></h2>
+		<b>HOW TO PLAY:</b> Use your arrow keys to move the tiles.
+		</center>
+ </body>
+
+ <script type="text/javascript">
+	//<!--
+const SIZE = 4;
+const emptyCells = [
+    [null, null, null, null],
+    [null, null, null, null],
+    [null, null, null, null],
+    [null, null, null, null],
+];
+
+let initCells = [
+    [null, null, null, 2],
+    [null, null, null, 2],
+    [null, null, null, null],
+    [null, null, null, null],
+];
+
+const [ UP, DOWN, LEFT, RIGHT ] = [ 'UP', 'DOWN', 'LEFT', 'RIGHT' ];
+
+function deepCloneCells(cellsToClone) {
+    return cellsToClone.map(row => [...row]);
+}
+function randomIntSmallerThan(max) {
+    return Number.parseInt(Math.random() * max);
+}
+function nDistinctRandomInts(max, n) {
+    const results = new Set();
+    while (results.size < n) {
+        results.add(randomIntSmallerThan(max));
+    }
+    return [...results];
+}
+function toRowAndCol(num, n) {
+    return [Number.parseInt(num / n), num % n];
+}
+
+function randomCellIndexes(num, n) { 
+    return nDistinctRandomInts(num, n).map(
+        (num) => toRowAndCol(num, SIZE));
+}
+function emptyCellIndexes(cells) {
+    const results = [];
+    for (let row = 0; row < SIZE; ++row) {
+        for (let col = 0; col < SIZE; ++col) { 
+            if (cells[row][col] === null) {
+                results.push([row, col]);
+            }
+        }
+    }
+    return results;
+}
+function nDistinctRandomEmptyCellIndexes(cells, n) {
+    const availableIndexes = emptyCellIndexes(cells);
+    const results = new Set();
+    while (results.size < n && results.size < availableIndexes.length) {
+        results.add(availableIndexes[randomIntSmallerThan(availableIndexes.length)]);
+    }
+    return [...results];
+}
+function fillRandomCells(cells, n = 1, values = [2]) {
+    nDistinctRandomEmptyCellIndexes(cells, n).forEach(([ row, col ]) => {
+        cells[row][col] = values[randomIntSmallerThan(values.length)];
+    });
+    return cells;
+}
+let currentCells = deepCloneCells(emptyCells);
+
+const weightedRandomCellValue = [
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+    16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
+    32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+    128, 128, 128, 128, 128, 128, 128, 128,
+    256, 256, 256, 256,
+    512, 512,
+    1024,
+];
+
+function mergeSlot(originalSlot) {
+    const resultSlot = [];
+    let canMerge = false;
+    originalSlot.forEach((cellValue) => {
+        if (cellValue === null) {
+            return;
+        }
+        if (canMerge && cellValue === resultSlot.slice(-1)[0]) {
+            resultSlot[resultSlot.length - 1] = cellValue * 2;
+            canMerge = false;
+        }
+        else {
+            resultSlot.push(cellValue);
+            canMerge = true;
+        }
+    });
+    for (let i = resultSlot.length; i < SIZE; ++i) {
+        resultSlot[i] = null;
+    }
+    return resultSlot;
+}
+function move(cells, direction) {
+    const result = deepCloneCells(cells);
+    switch(direction) {
+        case LEFT:
+            for(let row = 0; row < SIZE; ++row) {
+                const originalSlot = result[row];
+                const resultSlot = mergeSlot(originalSlot);
+                result[row] = [...resultSlot];
+            }
+            break;
+        case RIGHT:
+            for(let row = 0; row < SIZE; ++row) {
+                const originalSlot = result[row].reverse();
+                const resultSlot = mergeSlot(originalSlot).reverse();
+                result[row] = [...resultSlot];
+            }
+            break;
+        case UP:
+            for(let col = 0; col < SIZE; ++col) {
+                const originalSlot = [0, 1, 2, 3].map((row) => result[row][col]);
+                const resultSlot = mergeSlot(originalSlot);
+                for(let row = 0; row < SIZE; ++row) {
+                    result[row][col] = resultSlot[row];
+                }
+            }
+            break;
+        case DOWN:
+            for(let col = 0; col < SIZE; ++col) {
+                const originalSlot = [3, 2, 1, 0].map((row) => result[row][col]);
+                const resultSlot = mergeSlot(originalSlot).reverse();
+                for(let row = 0; row < SIZE; ++row) {
+                    result[row][col] = resultSlot[row];
+                }
+            }
+            break;
+    }
+    // console.log(result)
+    return result;
+}
+
+
+function getColor(cellValue){
+    var color = "#ffffff";
+    switch(cellValue) {
+        case 2:		color = "#F6CED8"; break;
+        case 4:		color = "#F7BE81"; break;
+        case 8:		color = "#F3F781"; break;
+        case 16:	color = "#BEF781"; break;
+        case 32:	color = "#81F7D8"; break;
+        case 64:	color = "#58D3F7"; break;
+        case 128:	color = "#FA58F4"; break;
+        case 256:	color = "#A901DB"; break;
+        case 512:	color = "#01DF3A"; break;
+        case 1024:	color = "#D7DF01"; break;
+        case 2048:	color = "#D7DF01"; break;
+        default:	color = "#ffffff";
+    }
+    return color;
+}
+function loadHtmlCells() {
+    const result = [[],[],[],[]];
+    for (let row = 0; row < SIZE; ++row) {
+        for (let col = 0; col < SIZE; ++col) {
+            result[row][col] = document.getElementById(`${row}-${col}`);
+        } 
+    }
+    return result;
+}
+
+function drawCells(cellValues, htmlCells){
+    for (let row = 0; row < SIZE; ++row) {
+        for (let col = 0; col < SIZE; ++col) {
+            const cellValue = cellValues[row][col];
+            const htmlCell = htmlCells[row][col];
+            htmlCell.innerHTML = cellValue;
+            htmlCell.style.backgroundColor = getColor(cellValue);
+        } 
+    } 
+}
+let cells = deepCloneCells(initCells);
+
+const htmlCells = loadHtmlCells();
+
+const keyCodeToDirection = {
+	37: LEFT,
+	38: UP,
+	39: RIGHT,
+	40: DOWN,
+};
+
+function initGame() {
+    const initCellValues = deepCloneCells(emptyCells);
+	// fillRandomCells(initCellValues, 8, weightedRandomCellValue);
+	fillRandomCells(initCellValues, 2);
+    drawCells(initCellValues, htmlCells); 
+}	
+// initGame();
+document.onkeydown = function(e) {
+	e.preventDefault();//to prevent scroll of screen
+	const direction = keyCodeToDirection[e.keyCode];
+	if (direction) {
+		cells = move(cells, direction);
+		fillRandomCells(cells);
+		drawCells(cells, htmlCells);
+	}
+};
+    //-->
+</script>
+</html>
