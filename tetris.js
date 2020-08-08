@@ -35,7 +35,7 @@ const pieces = new Map([
         [7, 7, 7],
         [0, 0, 0],
     ]],
-];
+]);
 
 const colors = [
     '#000000',
