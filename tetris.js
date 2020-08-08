@@ -35,7 +35,7 @@ const pieces = new Map([
         [7, 7, 7],
         [0, 0, 0],
     ]],
-]);
+];
 
 const colors = [
     '#000000',
@@ -164,10 +164,10 @@ function merge(arena, player) {
 
 // 消除完整行
 function arenaSweep() {
-    const notEmptyRows = arena.filter((row) => row.includes(0));
-    const emptyRows = createMatrix(ARENA_WIDTH, arena.length - notEmptyRows.length);
-    arena = [...emptyRows, ...notEmptyRows];
-    player.score += Math.pow(2, emptyRows.length) * 10;
+    const notFullRows = arena.filter((row) => row.includes(0));
+    const fullRows = createMatrix(ARENA_WIDTH, arena.length - notFullRows.length);
+    arena = [...fullRows, ...notFullRows];
+    player.score += fullRows.length ? Math.pow(2, fullRows.length) * 10 : 0;
 }
 
 // 移动当前方块
