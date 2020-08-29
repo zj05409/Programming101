@@ -4,7 +4,8 @@ var constants =  {
     "%": "forest.png",
     "~": "water1.png",
     "-": "ice.png",
-    "@": "steel.png"
+    "@": "steel.png",
+    "!": "enemy_tank.png",
   },
 
   ENTITY_TYPES: {
@@ -12,7 +13,8 @@ var constants =  {
     FOREST: 2,
     WATER: 3,
     ICE: 4,
-    STEEL: 5
+    STEEL: 5,
+    ENEMY_TANK: 6
   },
 
   ATLAS_TO_ENTITY_TYPE: {
@@ -20,6 +22,7 @@ var constants =  {
     "forest.png": 2,
     "water1.png": 3,
     "ice.png": 4,
-    "steel.png": 5
+    "steel.png": 5,
+    "enemy_tank.png": 6
   }
 };

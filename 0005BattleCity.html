@@ -14,6 +14,9 @@
 <script src="./const.js"></script>
 <script src="./parser.js"></script>
 <script type="text/javascript">
+
+const directions = [UP, DOWN, LEFT, RIGHT] = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
+
 var config = {
     type: Phaser.AUTO,
     width: 208,
@@ -44,6 +47,7 @@ var score = 0;
 var gameOver = false;
 var scoreText;
 var creatingBullet = false;
+var tanksMoving = false;
 var lastDirectionX = 1;
 
 var game = new Phaser.Game(config);
@@ -85,6 +89,7 @@ function preload ()
     this.load.image('yellow_tank', 'assets/yellow_tank.png');
     this.load.image('bullet', 'assets/bullet.png');
     this.load.image('castle', 'assets/castle.png');
+    this.load.image('enemy_tank', 'assets/enemy_tank.png');
     // this.load.image('sky', 'assets/sky.png');
     // this.load.image('ground', 'assets/platform.png');
     // this.load.image('star', 'assets/star.png');
@@ -129,6 +134,7 @@ function create ()
         power: 1
     };
     this.bullets = this.physics.add.group();
+    this.enemyBullets = this.physics.add.group();
     // tank.setOrigin(0.5,0.5);
     // tank.anchor.setTo(0.5);
     // tank.health = Number.MAX_SAFE_INTEGER;
@@ -137,29 +143,44 @@ function create ()
     this.fireButton = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
     // Add level blocks
-    this.bricks = this.physics.add.group();
-    this.steelBlocks = this.physics.add.group();
-    this.iceBlocks = this.physics.add.group();
-    this.waterBlocks = this.physics.add.group();
+    this.bricks = this.physics.add.staticGroup();
+    this.steelBlocks = this.physics.add.staticGroup();
+    this.forestBlocks = this.physics.add.staticGroup();
+    this.iceBlocks = this.physics.add.staticGroup();
+    this.waterBlocks = this.physics.add.staticGroup();
+    this.enemies = this.physics.add.group();
+    this.groups = {
+        [constants.ENTITY_TYPES.BRICK]: this.bricks,
+        [constants.ENTITY_TYPES.STEEL]: this.steelBlocks,
+        [constants.ENTITY_TYPES.ICE]: this.iceBlocks,
+        [constants.ENTITY_TYPES.WATER]: this.waterBlocks,
+        [constants.ENTITY_TYPES.ENEMY_TANK]: this.enemies,
+        [constants.ENTITY_TYPES.FOREST]: this.forestBlocks,
+    }
 
     // Add level sprites
     const urlParams = new URLSearchParams(window.location.search);
     level = Number.parseInt(urlParams.get('level') || '1');
     var levelData = this.cache.text.get(`level_${level}`);
-    var sprites = getSprites(levelData, this);
+    var sprites = getSprites(levelData, this, level);
     sprites.forEach(sprite => {
         this.add.existing(sprite);
 
         if (sprite.extra.entityType == constants.ENTITY_TYPES.BRICK) {
-            this.bricks.add(sprite);
+            // this.bricks.add(sprite);
         } else if (sprite.extra.entityType == constants.ENTITY_TYPES.WATER) {
-            this.waterBlocks.add(sprite);
+            // this.waterBlocks.add(sprite);
             // sprite.animations.add("ripple", ["water1.png", "water2.png"]);
             // sprite.animations.play("ripple", 1, true);
         } else if (sprite.extra.entityType == constants.ENTITY_TYPES.STEEL) {
-            this.steelBlocks.add(sprite);
+            // this.steelBlocks.add(sprite);
+        } else if (sprite.extra.entityType == constants.ENTITY_TYPES.ENEMY_TANK) {
+            sprite.setCollideWorldBounds(true);
+            // this.enemies.add(sprite);
         }
     });
+
+    this.enemyTanks = this.enemies.children.entries;
 
 
     // Add castle
@@ -193,16 +214,71 @@ function create ()
     );
     this.physics.add.overlap(
         this.bullets,
+        this.enemies,
+        hitBricks,
+        null,
+        this
+    );
+    this.physics.add.overlap(
+        this.bullets,
         this.steelBlocks,
         hitSteel,
         null,
         this
     );
-    this.physics.add.collider(this.tank, this.bricks);
-    this.physics.add.collider(this.tank, this.waterBlocks);
-    this.physics.add.collider(this.tank, this.steelBlocks);
+    this.physics.add.overlap(
+        this.enemyBullets,
+        this.players,
+        hitBricks,
+        null,
+        this
+    );
+    this.physics.add.overlap(
+        this.enemyBullets,
+        this.castles,
+        destroyCastle,
+        null,
+        this
+    );
+    this.physics.add.overlap(
+        this.enemyBullets,
+        this.bricks,
+        hitBricks,
+        null,
+        this
+    );
+    this.physics.add.overlap(
+        this.enemyBullets,
+        this.steelBlocks,
+        hitSteel,
+        null,
+        this
+    );
+    this.physics.add.overlap(
+        this.enemyBullets,
+        this.enemies,
+        hitSteel,
+        null,
+        this
+    );
+    this.physics.add.overlap(
+        this.enemyBullets,
+        this.bullets,
+        hitBricks,
+        null,
+        this
+    );
+    this.physics.add.collider(this.players, this.bricks);
+    this.physics.add.collider(this.players, this.waterBlocks);
+    this.physics.add.collider(this.players, this.steelBlocks);
     this.physics.add.collider(this.players, this.castles);
+    this.physics.add.collider(this.players, this.enemies);
 
+    this.physics.add.collider(this.enemies, this.bricks);
+    this.physics.add.collider(this.enemies, this.waterBlocks);
+    this.physics.add.collider(this.enemies, this.steelBlocks);
+    this.physics.add.collider(this.enemies, this.castles);
+    // this.physics.add.collider(this.enemies, this.enemies);
 
     // graphics.endFill();
 
@@ -312,8 +388,8 @@ function destroyCastle(bullet, castle) {
         // this.fx.explosion.play().onStop.add(() => {
         //     this.fx.background.stop();
         // });
-        console.log("Game Over");
-        window.location.href=window.location.href.split('?')[0] + `?level=${level + 1}`
+        alert("你失败了，从头再来！");
+        window.location.href=window.location.href.split('?')[0] + `?level=${level}`
     }
 }
 
@@ -321,12 +397,30 @@ function hitBricks(bullet, brick) {
     bullet.destroy();
     brick.destroy();
     this.fx.brick.play();
+    if (brick === this.tank) {
+        setTimeout(() => {
+            if (this.creatingTank) {
+                return;
+            }
+            this.creatingTank = true;
+            this.tank = this.players.create(
+                79,
+                200,
+                "yellow_tank",
+            );
+            this.tank.setCollideWorldBounds(true);
+            this.creatingTank = false;
+        }, 1000);
+    }
     // var explosion = this.explosions.getFirstExists(false);
     // explosion.reset(bullet.x, bullet.y);
     // explosion.animations.play("impact", 60, false, true);
 }
 
 function hitSteel(bullet, steelBlock) {
+    if (bullet.from === steelBlock) {
+        return;
+    }
     bullet.destroy();
     if (this.playerWeapon.power > 1) {
         this.fx.brick.play();
@@ -339,57 +433,152 @@ function hitSteel(bullet, steelBlock) {
     }
 }
 
+function changeDirection (tank, direction, factor = 1) {
+    // return;
+    // tank.body.velocity.setTo(0, 0);
+    if (!tank || !tank.body) {
+        return;
+    }
+
+    tank.factor = factor;
+    tank.direction = direction;
+    switch (direction) {
+        case UP:
+            tank.setAngle(0);
+            tank.setVelocityX(0 * factor);
+            tank.setVelocityY(-100 * factor);
+            tank.bulletVelocityX = 0 * factor;
+            tank.bulletVelocityY = -150 * factor;
+            break;
+        case DOWN:
+            // tank.angle = 180;
+            tank.setAngle(180);
+            tank.setVelocityX(0 * factor);
+            tank.setVelocityY(100 * factor);
+            tank.bulletVelocityX = 0 * factor;
+            tank.bulletVelocityY = 150 * factor;
+            break;
+        case RIGHT:
+            tank.setAngle(90);
+            tank.setVelocityY(0 * factor);
+            tank.setVelocityX(100 * factor);
+            tank.bulletVelocityX = 150 * factor;
+            tank.bulletVelocityY = 0 * factor;
+            break;
+        case LEFT:
+            // tank.angle = -90;
+            tank.setAngle(-90);
+            tank.setVelocityY(0 * factor);
+            tank.setVelocityX(-100 * factor);
+            tank.bulletVelocityX = -150 * factor;
+            tank.bulletVelocityY = 0 * factor;
+            break;
+    }
+}
 function update ()
 {
         // return;
-    this.tank.body.velocity.setTo(0, 0);
+    if (this.tank && this.tank.body) {
+        this.tank.body.velocity.setTo(0, 0);
+    }
 
     if (this.fx.moving.isPlaying) {
         this.fx.moving.stop();
     }
 
     if (this.cursors.up.isDown) {
-        this.tank.setAngle(0);
-        this.tank.setVelocityX(0);
-        this.tank.setVelocityY(-100);
-        bulletVelocityX = 0;
-        bulletVelocityY = -150;
+        changeDirection(this.tank, UP);
         this.fx.moving.play();
     } else if (this.cursors.down.isDown) {
-        // this.tank.angle = 180;
-        this.tank.setAngle(180);
-        this.tank.setVelocityX(0);
-        this.tank.setVelocityY(100);
-        bulletVelocityX = 0;
-        bulletVelocityY = 150;
+        changeDirection(this.tank, DOWN);
         this.fx.moving.play();
     } else if (this.cursors.right.isDown) {
-        this.tank.setAngle(90);
-        this.tank.setVelocityY(0);
-        this.tank.setVelocityX(100);
-        bulletVelocityX = 150;
-        bulletVelocityY = 0;
+        changeDirection(this.tank, RIGHT);
         this.fx.moving.play();
     } else if (this.cursors.left.isDown) {
-        // this.tank.angle = -90;
-        this.tank.setAngle(-90);
-        this.tank.setVelocityY(0);
-        this.tank.setVelocityX(-100);
-        bulletVelocityX = -150;
-        bulletVelocityY = 0;
+        changeDirection(this.tank, LEFT);
         this.fx.moving.play();
     }
+
+    // if (this.cursors.up.isDown) {
+    //     this.tank.setAngle(0);
+    //     this.tank.setVelocityX(0);
+    //     this.tank.setVelocityY(-100);
+    //     this.tank.bulletVelocityX = 0;
+    //     this.tank.bulletVelocityY = -150;
+    //     this.fx.moving.play();
+    // } else if (this.cursors.down.isDown) {
+    //     // this.tank.angle = 180;
+    //     this.tank.setAngle(180);
+    //     this.tank.setVelocityX(0);
+    //     this.tank.setVelocityY(100);
+    //     this.tank.bulletVelocityX = 0;
+    //     this.tank.bulletVelocityY = 150;
+    //     this.fx.moving.play();
+    // } else if (this.cursors.right.isDown) {
+    //     this.tank.setAngle(90);
+    //     this.tank.setVelocityY(0);
+    //     this.tank.setVelocityX(100);
+    //     this.tank.bulletVelocityX = 150;
+    //     this.tank.bulletVelocityY = 0;
+    //     this.fx.moving.play();
+    // } else if (this.cursors.left.isDown) {
+    //     // this.tank.angle = -90;
+    //     this.tank.setAngle(-90);
+    //     this.tank.setVelocityY(0);
+    //     this.tank.setVelocityX(-100);
+    //     this.tank.bulletVelocityX = -150;
+    //     this.tank.bulletVelocityY = 0;
+    //     this.fx.moving.play();
+    // }
 
     if (!creatingBullet && this.fireButton.isDown) {
         creatingBullet = true;
         let bullet = this.bullets.create(this.tank.x, this.tank.y, 'bullet');
         bullet.setCollideWorldBounds(false);
-        bullet.setVelocity(bulletVelocityX, bulletVelocityY);
+        bullet.setVelocity(this.tank.bulletVelocityX, this.tank.bulletVelocityY);
         bullet.body.allowGravity = false;
         setTimeout(() => {
             creatingBullet = false;
         }, 1000);
     }
+
+    if (!tanksMoving) {
+        tanksMoving = true;
+        this.enemyTanks.forEach((tank) => {
+            if (!tank || !tank.body) {
+                return;
+            }
+            tank.body.velocity.setTo(0, 0);
+            const randomDirection = directions[Math.random() * 4 | 0];
+            // if (randomDirection !== tank.direction) {
+                changeDirection(tank, randomDirection, 1 - Math.random() * 0.5);
+            // }
+        });
+
+        this.enemyTanks.forEach((tank) => {
+            if (!tank || !tank.body) {
+                return;
+            }
+            const fire = Math.random() < tank.factor * tank.factor;
+            if (fire) {
+                let bullet = this.enemyBullets.create(tank.x, tank.y, 'bullet');
+                bullet.from = tank;
+                bullet.setCollideWorldBounds(false);
+                bullet.setVelocity(tank.bulletVelocityX, tank.bulletVelocityY);
+                bullet.body.allowGravity = false;
+            }
+        });
+
+        setTimeout(() => {
+            tanksMoving = false;
+        }, 1000);
+    }
+    if (this.enemyTanks && !this.enemyTanks.length) {
+        alert('你真厉害，进入下一关！');
+        window.location.href=window.location.href.split('?')[0] + `?level=${level + 1}`
+    }
+
 
     //     bullet.setCollideWorldBounds(false);
     //     bullet.setVelocity(velocityX ? velocityX * 1.5 : lastDirectionX * 160, velocityY ? velocityY * 1.5 : -160);

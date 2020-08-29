@@ -4,9 +4,25 @@ function getAtlasKey(symbol) {
   return constants.TILE_TO_ATLAS[symbol];
 }
 
-function getSprites(levelData, game) {
+function getSprites(levelData, game, enemyCount) {
+    if (enemyCount < 10) {
+        enemyCount = 10;
+    }
   return levelData
     .split(/\r\n|\r|\n/g)
+    .map((row, i) => {
+        if (i <= 3) {
+            return row.split('').map(( c, i, cs ) => {
+                if (enemyCount > 0 && c === '.' && cs[i + 1] === '.') {
+                    enemyCount -= 1;
+                    return '!';
+                }
+                return c;
+            }).join('');
+        } else {
+            return row;
+        }
+    })
     .join("")
     .split("")
     .map((tileSymbol, tileIndex) => {
@@ -15,7 +31,7 @@ function getSprites(levelData, game) {
         return null;
       }
 
-      var args = [game, tileIndex, atlasKey];
+      var args = [game, tileIndex, atlasKey, game.groups[constants.ATLAS_TO_ENTITY_TYPE[atlasKey]]];
       return getTerrainSprite.apply(null, args);
     })
     .filter(sprite => {
@@ -23,13 +39,23 @@ function getSprites(levelData, game) {
     });
 }
 
-function getTerrainSprite(game, tileIndex, imageKey) {
-   const sprite =  game.physics.add.sprite(4 + xCoord(tileIndex), 4 + yCoord(tileIndex), "sprites", imageKey);
+function getTerrainSprite(game, tileIndex, imageKey, group) {
+    let sprite = null;
+    if (imageKey === 'enemy_tank.png') {
+        sprite = group.create(4 + xCoord(tileIndex), 4 + yCoord(tileIndex), "enemy_tank");
+        sprite.extra = {
+            entityType: constants.ATLAS_TO_ENTITY_TYPE[imageKey]
+        };
+    } else {
+        sprite = group.create(4 + xCoord(tileIndex), 4 + yCoord(tileIndex), "sprites", imageKey);
+        sprite.body.immovable = true;
+        sprite.extra = {
+            entityType: constants.ATLAS_TO_ENTITY_TYPE[imageKey]
+        };
+    }
+
+    // const sprite =  game.physics.add.sprite(4 + xCoord(tileIndex), 4 + yCoord(tileIndex), "sprites", imageKey, group);
   // game.physics.arcade.enable(sprite);
-  sprite.body.immovable = true;
-  sprite.extra = {
-    entityType: constants.ATLAS_TO_ENTITY_TYPE[imageKey]
-  };
   return sprite;
 }
 
