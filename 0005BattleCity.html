@@ -574,7 +574,8 @@ function update ()
             tanksMoving = false;
         }, 1000);
     }
-    if (this.enemyTanks && !this.enemyTanks.length) {
+    if (!this.gameOver && this.enemyTanks && !this.enemyTanks.length) {
+        this.gameOver = true;
         alert('你真厉害，进入下一关！');
         window.location.href=window.location.href.split('?')[0] + `?level=${level + 1}`
     }
