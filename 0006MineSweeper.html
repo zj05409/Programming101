@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+ <head>
+	 <title> Javascript : MineSweeper puzzle</title>
+	 <script type="text/javascript" src="./mineSweeper.js"></script>
+ </head>
+ <body>
+	<center id="game">
+		<a style="cursor: pointer; padding-left: 10%;" @click="restartGame()">{{restartMessage}}</a>
+		<div id="canvas">
+			<table border="1">
+				<tbody>
+					<tr v-for="row in game" :key="row">
+						<td v-for="cell in row" align="center" valign="center" height="30" width="30"
+							v-bind:id="cell.i + '-' + cell.j"  @click="clickCell(cell, true)"
+							@contextmenu="toggleCellMarkMine(cell, $event)"
+							style="background-color: rgb(246, 206, 216);">
+							{{printCell(cell)}}
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<h2>剩余地雷数 : <div style="display:inline;" id="score">{{game.remainingMines}}</div></h2>
+		<b>HOW TO PLAY:</b> 左键点击未知方块：探测地雷；左键点击数字方块：自动探测周围地雷；右键点击：标记地雷/取消标记地雷。
+	</center>
+ </body>
+
+ <script type="text/javascript" src="./vue.global.js"></script>
+ <script type="text/javascript">
+
+	 const urlParams = new URLSearchParams(window.location.search);
+	 const rowCount = Number.parseInt(urlParams.get('rowCount') || '16');
+	 const colCount = Number.parseInt(urlParams.get('colCount') || '16');
+	 const mineCount = Number.parseInt(urlParams.get('mineCount') || '40');
+
+	 let game = makeGame(rowCount, colCount, mineCount);
+	 printGame(game, true);
+	 printGame(game);
+
+	 const HelloVueApp = {
+		 data() {
+			 return {
+				 restartMessage: '重新开始',
+				 game: game,
+			 }
+		 },
+		 methods: {
+		 	 restartGame() {
+
+				 // const rowCount = Number.parseInt(urlParams.get('rowCount') || '16');
+				 // const colCount = Number.parseInt(urlParams.get('colCount') || '16');
+				 // const mineCount = Number.parseInt(urlParams.get('mineCount') || '40');
+				 window.location.href = window.location.href.split('?')[0] + `?rowCount=${rowCount}` + `&colCount=${colCount}` + `&mineCount=${mineCount}`;
+			 },
+			 printCell: printCell,
+			 clickCell(cell) {
+			 	 clickCell(cell);
+				 if(cell.game.revealed) {
+					 this.data.game = game;
+				 }
+			 },
+			 toggleCellMarkMine(cell, e) {
+			 	e.preventDefault();
+			 	const toggleSuccess = toggleCellMarkMine(cell);
+			 	if (toggleSuccess) {
+					this.data.game = game;
+				}
+			 }
+		 }
+	 }
+
+	 Vue.createApp(HelloVueApp).mount('#game')
+	//<!--
+    //-->
+</script>
+</html>
