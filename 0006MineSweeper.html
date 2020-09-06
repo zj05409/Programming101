@@ -2,7 +2,6 @@
 <html>
 <head>
 	<title> Javascript : MineSweeper puzzle</title>
-	<script type="text/javascript" src="./mineSweeper.js"></script>
 </head>
 <body>
 <center id="game">
@@ -24,11 +23,12 @@
 	<h2>剩余地雷数 : <div style="display:inline;" id="score">{{game.remainingMines}}</div></h2>
 	<b>HOW TO PLAY:</b> 左键点击未知方块：探测地雷；左键点击数字方块：自动探测周围地雷；右键点击：标记地雷/取消标记地雷。
 </center>
-</body>
 
+<script src="./mineSweeper.js"></script>
 <script type="text/javascript" src="./vue.global.js"></script>
 <script type="text/javascript">
 
+	//<!--
 	const urlParams = new URLSearchParams(window.location.search);
 	const rowCount = Number.parseInt(urlParams.get('rowCount') || '16');
 	const colCount = Number.parseInt(urlParams.get('colCount') || '16');
@@ -71,7 +71,8 @@
 	}
 
 	Vue.createApp(HelloVueApp).mount('#game')
-	//<!--
 	//-->
 </script>
+</body>
+
 </html>
