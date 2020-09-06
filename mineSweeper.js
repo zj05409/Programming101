@@ -108,7 +108,7 @@ function clickCell(cell, root = false) {
         } else if (root) {
             const unmarkedCells = neighbours.filter((cell) => !cell.markedMine);
             if (unmarkedCells.length === neighbours.length - cell.mineCount) {
-                unmarkedCells.filter((cell) => !cell.revealed).forEach(clickCell);
+                unmarkedCells.filter((cell) => !cell.revealed && !cell.isMine).forEach(clickCell);
             } else {
                 console.log(neighbours.length, cell.mineCount, unmarkedCells.length);
             }
