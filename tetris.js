@@ -291,7 +291,7 @@ function drawMatrix(matrix, offset = ZERO_OFFSET) {
 // 画分数
 function drawScore() {
     // @ts-ignore
-    document.getElementById('score').innerHTML = player.score;
+    (document.getElementById('score') || {}).innerText = player.score;
 }
 
 // 画出整个游戏画面
