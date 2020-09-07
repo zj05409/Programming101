@@ -260,7 +260,7 @@ function playerAction(action) {
 
 // 初始化画布
 const canvas = document.getElementById('tetris');
-// 初始化画笔 
+// 初始化画笔
 // @ts-ignore
 const context = canvas.getContext('2d');
 
@@ -291,7 +291,7 @@ function drawMatrix(matrix, offset = ZERO_OFFSET) {
 // 画分数
 function drawScore() {
     // @ts-ignore
-    document.getElementById('score').innerText = player.score;
+    document.getElementById('score').innerHTML = player.score;
 }
 
 // 画出整个游戏画面
